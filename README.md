@@ -2,7 +2,7 @@
 
 Available on [Github Pages](https://manish-in-java.github.io/manish-in-java/).
 
-#License
+# License
 
 All code is being made available under the following licensing terms.
 
