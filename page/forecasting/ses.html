@@ -7,10 +7,12 @@
 
   <link href="../../static/css/bootstrap.css" rel="stylesheet" type="text/css">
   <link href="../../static/css/clean-blog.css" rel="stylesheet" type="text/css">
+  <link href="../../static/css/prism.css" rel="stylesheet" type="text/css">
 
   <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
   <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
 
+  <script src="../../static/script/prism.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 </head>
 <body>
@@ -115,7 +117,7 @@
             </p>
             <img alt="Observations with Level" src="../../static/image/forecasting/level.jpg" />
             <p class="text-center">
-              <i>Figure 2: Example observations with level</i>
+              <i>Figure 2: Example observations, with level</i>
             </p>
             <p>
               The second, known as the <code>trend</code> indicates whether
@@ -329,35 +331,37 @@
             </p>
             <img alt="Observations with Level and Forecast" src="../../static/image/forecasting/ses.jpg" />
             <p class="text-center">
-              <i>Figure 3: Example observations with level and forecast</i>
+              <i>Figure 3: Example observations, with level and forecast</i>
             </p>
 
             <p>
               The following Java code shows how to use the Apache Commons Math
-              library to find the optimal value for \(\alpha\) (Java 8 or
-              higher required).
+              library (version 3.6.1 to be precise) to find the optimal value
+              for \(\alpha\) (Java 8 or higher required).
             </p>
-            <pre class="bg-light">
-
+            <pre>
+              <code class="language-java">
   /**
    * Optimizes the value for the smoothing factor for a set of
    * observations using the {@literal Levenberg-Marquardt (LM)} method,
-   * which is a non-linear least-squares curve-fitting algorithm. This
+   * which is a non-linear, least-squares, curve-fitting algorithm. This
    * method generates predictions for the given observations, starting
    * with an initial guess for the smoothing factor, and iteratively
-   * changing its value until one is found that minimizes the
-   * {@literal sum-squared-error (MSE)} for the observations.
+   * changing the value of the smoothing factor until one is found that
+   * minimizes the {@literal sum-squared-error (MSE)} for the given
+   * observations.
    */
   public class LevenbergMarquardtOptimizer
   {
     /**
      * Finds the optimal value for the smoothing factor for a
      * collection of observations, such that the value can be used to
-     * generate a forecast that is as close to the sample as possible.
+     * generate a forecast that is as close to the observations as possible.
      *
      * @param observations      The observations for which the optimal value of
-     *                          is required.
-     * @return An optimal value for for the given observations.
+     *                          the smoothing factor is required.
+     * @return An optimal value for the smoothing factor for the given
+     * observations.
      */
     public double optimize(final double[] observations)
     {
@@ -374,7 +378,7 @@
      * @param observations A collection of observations.
      * @return A baseline version of the observations.
      */
-    double[] baselineObservations(final double[] observations)
+    private double[] baselineObservations(final double[] observations)
     {
       final double[] baseline = new double[observations.length];
 
@@ -384,12 +388,29 @@
     }
 
     /**
+     * Gets the simple average for a collection of observations. This is used
+     * as the first prediction for the given observations.
+     *
+     * @param observations The observations for which the first prediction is
+     *                     required.
+     * @return The first prediction for the observations.
+     */
+    private double firstPrediction(final double[] observations)
+    {
+      return Arrays.stream(observations)
+                    .boxed()
+                    .mapToDouble(d -> d)
+                    .average()
+                    .orElse(0);
+    }
+
+    /**
      * Converts a collection of observations into a
      * {@literal least-squares curve-fitting problem} using an initial
-     * value of the smoothing factor. The smoothing factor is used for
-     * exponential smoothing so that the resultant problem can be fed
-     * to a curve-fitting algorithm for finding the optimal value of
-     *.
+     * value for the smoothing factor. The smoothing factor is used for
+     * applying exponential smoothing so that the resultant problem can
+     * be fed to a curve-fitting algorithm for finding the optimal value
+     * of the smoothing factor .
      *
      * @param observations      The observations to convert to a least-squares
      *                          curve-fitting problem.
@@ -409,14 +430,14 @@
     }
 
     /**
-     * Gets the model function to use for optimizing the value of,
-     * which is just the predicted value for each observed value. The
-     * optimization algorithm then uses the difference between the observed
-     * and corresponding predicted values to find the optimal value for
-     *.
+     * Gets the model function to use for optimizing the value of
+     * the smoothing factor, which is just the predicted value for
+     * each observed value. The optimization algorithm then uses the
+     * difference between the observed and corresponding predicted
+     * values to find the optimal value for the smoothing factor.
      *
      * @param observations      The observations for which the optimal value of
-     *                          is required.
+     *                          the smoothing factor is required.
      * @return A {@link MultivariateVectorFunction}.
      */
     private MultivariateVectorFunction optimizationModelFunction(final double[] observations)
@@ -426,10 +447,11 @@
 
     /**
      * Gets the <i>Jacobian</i> (\(j\)) corresponding to the model function
-     * used for optimizing the value of.
+     * used for optimizing the value of the smoothing factor.
      *
      * @param observations      The observations (\(y_t\)) for which the
-     *                          optimal value of is required.
+     *                          optimal value of the smoothing factor is
+     *                          required.
      * @return A {@link MultivariateMatrixFunction}, which is a
      * single-column matrix whose elements correspond to the
      * <i>Jacobian</i> of the model function.
@@ -464,8 +486,8 @@
     }
 
     /**
-     * Smoothens a collection of observations by exponentially dampening them
-     * using a factor.
+     * Smoothens a collection of observations by dampening them exponentially
+     * using a smoothing factor.
      *
      * @param observations The observations to smoothen.
      * @param alpha        The smoothing factor.
@@ -491,6 +513,7 @@
       return smoothed;
     }
   }
+              </code>
             </pre>
           </section>
 
