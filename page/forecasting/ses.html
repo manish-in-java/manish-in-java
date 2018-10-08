@@ -71,24 +71,29 @@
               <i>Figure 1: Example observations</i>
             </p>
             <p>
-              It is common for forecasting technique to make predictions
+              It is common for forecasting techniques to make predictions
               corresponding to at least some, if not all of the (past)
               observed data points (in addition to generating predictions
               for the future). This allows the forecast to be compared
-              with the (actual) observations. The difference between a data
-              point and its corresponding prediction is known as the
+              with the (actual) observations to understand forecast accuracy.
+            </p>
+            <p>
+              A common measure for forecast accuracy is the difference between
+              a data point and its corresponding prediction, known as the
               <code>error</code> (that is,
-              <code>error = data point - prediction</code>).
+              <code>error = observation - prediction</code>).
               If a prediction is higher than the data
-              point (<code>prediction &gt; data point</code>), the error is
+              point (<code>prediction &gt; observation</code>), the error is
               negative, if both are the same
-              (<code>prediction = data point</code>),
+              (<code>prediction = observation</code>),
               the error is zero, and if the prediction is lower
-              than the data point (<code>prediction &lt; data point</code>),
+              than the data point (<code>prediction &lt; observation</code>),
               the error is positive. Given that the error can be negative,
               zero or positive, it is more common to use the square of the
               error, known as the <code>squared-error</code>, which is
-              always zero or positive.
+              always zero or positive. This is done to avoid situations where
+              negative errors cancel out positive errors exactly, thereby
+              providing a false sense of forecast accuracy.
             </p>
             <p>
               Forecasts for the same observations, generated using different
@@ -98,6 +103,10 @@
               the squared-error, higher the accuracy of the associated
               forecasting technique.
             </p>
+          </section>
+
+          <section>
+            <h3>Forecasting basics</h3>
             <p>
               For most observations, there are three important points of
               interest. The first, known as the <code>level</code> is just
