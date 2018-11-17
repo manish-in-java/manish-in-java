@@ -7,10 +7,13 @@
 
   <link href="../../static/css/bootstrap.css" rel="stylesheet" type="text/css">
   <link href="../../static/css/font-awesome.css" rel="stylesheet" type="text/css">
+  <link href="../../static/css/prism.css" rel="stylesheet" type="text/css">
   <link href="../../static/css/clean-blog.css" rel="stylesheet" type="text/css">
 
   <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
   <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
+
+  <script src="../../static/script/prism.js"></script>
 </head>
 <body>
   <nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
@@ -88,8 +91,8 @@
               <code>@Configuration</code>) with
               <code>@EnableTransactionManagement</code>, as shown below:
             </p>
-            <pre class="bg-light">
-
+            <pre>
+              <code class="language-java">
   @Configuration
   @EnableTransactionManagement
   public class ApplicationConfiguration {
@@ -100,6 +103,7 @@
 
     ...
   }
+              </code>
             </pre>
             <h4><i>1.3. Enabling transactions with XML configuration</i></h4>
             <p>
@@ -108,8 +112,8 @@
               <b>must be added to the root context configuration</b> for the
               application, as shown below:
             </p>
-            <pre class="bg-light">
-
+            <pre>
+              <code class="language-xml">
   &lt;beans xmlns="http://www.springframework.org/schema/beans"
         xmlns:transaction="http://www.springframework.org/schema/tx"
         xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
@@ -120,6 +124,7 @@
 
     ...
   &lt;/beans&gt;
+              </code>
             </pre>
           </section>
 
@@ -136,8 +141,8 @@
               <i>root context</i>. The snippet below from a
               <code>web.xml</code> file makes this distinction clear:
             </p>
-            <pre class="bg-light">
-
+            <pre>
+              <code class="language-xml">
   &lt;web-app&gt;
     &lt;context-param&gt;
       &lt;param-name&gt;contextConfigLocation&lt;/param-name&gt;
@@ -161,6 +166,7 @@
       &lt;url-pattern&gt;/&lt;/url-pattern&gt;
     &lt;/servlet-mapping&gt;
   &lt;/web-app&gt;
+              </code>
             </pre>
             <p>
               The bottom part of the file (comprising of the <code>servlet</code>
@@ -233,8 +239,8 @@
               from outside the implementation class. This means, transaction
               semantics will not work for the following case:
             </p>
-            <pre class="bg-light">
-
+            <pre>
+              <code class="language-java">
   @Component
   public class FooComponent {
     public void bar() {
@@ -246,6 +252,7 @@
       ...
     }
   }
+              </code>
             </pre>
             <p>
               If such a case needs to be supported, consider using AspectJ
@@ -265,8 +272,8 @@
             <p>
               Consider the following Java code:
             </p>
-            <pre class="bg-light">
-
+            <pre>
+              <code class="language-java">
   @Transactional
   public interface FooService {
     void bar();
@@ -278,6 +285,7 @@
       ...
     }
   }
+              </code>
             </pre>
             <p>
               Developers expect <code>FooServiceImpl.bar()</code> to be
@@ -308,8 +316,8 @@
             <p>
               Consider the following Java code (similar to the one above):
             </p>
-            <pre class="bg-light">
-
+            <pre>
+              <code class="language-java">
   public interface FooService {
     void bar();
   }
@@ -331,9 +339,10 @@
       fooService.bar();
     }
   }
+              </code>
             </pre>
             <p>
-              Intuition indicates that a call to
+              It is intuitively reasonable to expect that a call to
               <code>FooConsumer.consume()</code> will in turn call
               <code>FooServiceImpl.bar()</code>, which would be invoked
               in transactional context. However, this too may not work.
@@ -349,6 +358,100 @@
               (with Java configuration) or
               <code>&lt;transaction:annotation-driven proxy-target-class="true" /&gt;</code>
               (with XML configuration).
+            </p>
+          </section>
+
+          <hr />
+
+          <section>
+            <h3>7. <code>@Transactional</code> does not roll back upon exception</h3>
+            <p>
+              A
+              <a href="https://stackoverflow.com/questions/52548356/transaction-is-not-getting-rolled-back-though-exception-is-thrown/52548527">common</a>
+              situation usually involves code similar to the following:
+            </p>
+            <pre>
+              <code class="language-java">
+  @Component
+  public class FooService {
+    @Transactional
+    public void bar() {
+      baz(1);
+
+      ...
+    }
+
+    private void baz(int i) throws Exception {
+      if (i < 2) {
+        throw new Exception("i must not be less than 2.");
+      }
+
+      ...
+    }
+  }
+              </code>
+            </pre>
+            <p>
+              It is usually expected that the transaction started by
+              <code>FooService.bar()</code> will get rolled back as soon as
+              <code>FooService.baz()</code> is called, because the later method
+              throws an <code>Exception</code>. However, as explained in the
+              <a href="https://docs.spring.io/spring/docs/current/spring-framework-reference/data-access.html#transaction-declarative-rolling-back">official documentation</a>,
+              <b>the Spring infrastructure rolls a transaction back only in the
+              case of runtime, unchecked exceptions</b>. This means,
+              <code>@Transactional</code> is short for
+              <code>@Transactional(rollbackFor = RuntimeException.class)</code>.
+            </p>
+            <p>
+              Therefore, changing <code>throw new Exception(...)</code> to
+              <code>throw new RuntimeException(...)</code> should mark the
+              transaction to roll back automatically.
+            </p>
+            <p>
+              Alternatively, changing <code>@Transactional</code> to
+              <code>@Transactional(rollbackFor = Exception.class)</code> should
+              also mark the transaction to roll back automatically, although
+              the former approach is preferable to this, as per the Spring
+              framework's philosophy of using only runtime exceptions.
+            </p>
+          </section>
+
+          <hr />
+
+          <section>
+            <h3>8. <code>@Transactional</code> does not roll back upon runtime exception</h3>
+            <p>
+              Yet
+              <a href="https://stackoverflow.com/questions/48773580/spring-data-hibernate-transactions-and-rolling-back-on-exceptions">another</a>
+              common problem faced by many developers is that of transactions
+              not rolling back, despite following all the steps described
+              above.
+            </p>
+            <p>
+              In most cases, the problem is one of the following.
+            </p>
+            
+            <h4><i>a. Underlying data store does not support transactions</i></h4>
+            <p>
+              Quite a few data stores, most notably the MySQL ISAM engine,
+              and older versions of MongoDB do not support transactions.
+              Therefore, attempting to enlist such data stores in a
+              transactional context will have no effect.
+            </p>
+            
+            <h4><i>b. Operations involve more than one data store</i></h4>
+            <p>
+              Sometimes a transaction can span more than one data store, for
+              example, two different database schemas, a database schema and
+              a JMS queue, a JMS queue and an ERP system. In such cases, even
+              though the individual data stores support transactions, users
+              may find that an operation spanning multiple data stores is not
+              atomic. This usually manifests itself as data getting saved to
+              one data store but not the other.
+            </p>
+            <p>
+              For such cases, developers need to switch to
+              <a href="https://en.wikipedia.org/wiki/Java_Transaction_API">XA transactions</a>.
             </p>
           </section>
 
